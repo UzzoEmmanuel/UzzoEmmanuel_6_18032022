@@ -1,14 +1,23 @@
 //import du modèle "user".
 const User = require("../models/User");
+//insatllation puis import du package crypto afin de crypter les adresses emails.
+const cryptojs = require("crypto-js");
 //installation du package de cryptage de mot de passe puis import du plugin bcrypt.
 const bcrypt = require("bcrypt");
 //installation du package d'authentification puis import du plugin jsonwebtoken.
 //permet la création de token ainsi que leur identification.
 const jwt = require("jsonwebtoken");
+//installation puis import du package dotenv afin de sécurisé la clé secrète jwb.
+//la clé secrète est stockée dans le fichier .env qui ne sera pas versionné sur git (voir fichier gitignore).
+require("dotenv").config();
 
 //-----------------------------------------------------------------------------------------------
 //export de la fonction qui permet de créer une nouvel utilisateur.
 exports.signup = (req, res, next) => {
+  //constante pour crypter l'email saisi.
+  const hashedEmail = cryptojs
+    .HmacSHA512(req.body.email, process.env.SECRET_CRYPTOJS_TOKEN)
+    .toString(cryptojs.enc.Base64);
   //fonction asynchrone pour crypter le mot de passe.
   bcrypt
     //le mot de passe est haché 10 fois.
@@ -16,7 +25,7 @@ exports.signup = (req, res, next) => {
     //le mot de passe haché est enregistré avec l'email dans la base de données.
     .then((hash) => {
       const user = new User({
-        email: req.body.email,
+        email: hashedEmail,
         password: hash,
       });
       user
@@ -34,9 +43,13 @@ exports.signup = (req, res, next) => {
 //-----------------------------------------------------------------------------------------------
 //export de la fonction qui permet d'authentifier un utilisateur.
 exports.login = (req, res, next) => {
+  //constante pour crypter l'email saisi.
+  const hashedEmail = cryptojs
+    .HmacSHA512(req.body.email, process.env.SECRET_CRYPTOJS_TOKEN)
+    .toString(cryptojs.enc.Base64);
   //methode .findOne pour trouver l'utilisateur dasn la base de données...
   //...qui correspond à l'email qui est entré dans le formulaire.
-  User.findOne({ email: req.body.email }) //objet de comparaison: on veut que l'email de la requête correspond à un email de la base de données.
+  User.findOne({ email: hashedEmail }) //objet de comparaison: on veut que l'email de la requête correspond à un email de la base de données.
     .then((user) => {
       //si l'utilisateur n'est pas trouvé, réponse avec le code erreur 401(non autorisé).
       if (!user) {
@@ -56,7 +69,7 @@ exports.login = (req, res, next) => {
             //reponse avec l'id de l'utilisateur et un token crypté.
             userId: user._id,
             //fonction .sign qui prend comme arguments l'id de l'utilisateur, une clé secrète et une expiration.
-            token: jwt.sign({ userId: user._id }, "RANDOM_TOKEN_SECRET", {
+            token: jwt.sign({ userId: user._id }, process.env.SECRET_TOKEN, {
               expiresIn: "24h",
             }),
           });

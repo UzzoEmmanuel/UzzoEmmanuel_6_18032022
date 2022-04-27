@@ -59,9 +59,3 @@ server.on("listening", () => {
 
 //on demande au serveur d'écouter la constante "port"
 server.listen(port);
-
-//les fonctions normalizePort, errorHandler et server.on sont données tel quel dans le cour d'openclassroom,
-//sans plus d'explication.
-//elles permettent de fournir un serveur stable et approprié au déploiement.
-//bien que j'en comprenne l'utilité il me serait difficile, avec mon niveau de connaissance actuelle,
-//d'en décrire précisément le fonctionnement.

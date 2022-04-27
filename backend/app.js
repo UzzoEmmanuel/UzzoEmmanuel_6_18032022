@@ -4,31 +4,43 @@ const express = require("express");
 const mongoose = require("mongoose");
 //import du package node permettant l'accés au chemin du système de fichiers.
 const path = require("path");
+//installation puis import du package helmet permettant de sécuriser certaines vulnérabilités des applications express en configurant des headers http.
+const helmet = require("helmet");
+//installation et import du package cors popur prévenir les erreurs de cors (sysème de sécurité qui bloque par défaut les appels http entre des serveurs différents).
+const cors = require("cors");
+//installation puis import du package dotenv afin de sécurisé le password d'accés à mongodb.
+//le password est stocké dans le fichier .env qui ne sera pas versionné sur git (voir fichier gitignore).
+require("dotenv").config();
 
 //import des routeur qui gérant respectivement les routes du modèle sauce et user.
 const sauceRoutes = require("./routes/sauce");
 const userRoutes = require("./routes/user");
 
-//appel de la méthode express pour pouvoir créer une application express.
-const app = express();
+//-----------------------------------------------------------------------------------------------
 
 //connexion à la base de donnée mongodb
 mongoose
-  .connect(
-    "mongodb+srv://lublulibellule:dyuTyQuTuodaj7TX@cluster0.ifbeh.mongodb.net/myFirstDatabase?retryWrites=true&w=majority",
-    { useNewUrlParser: true, useUnifiedTopology: true }
-  )
+  .connect(process.env.SECRET_DB, {
+    useNewUrlParser: true,
+    useUnifiedTopology: true,
+  })
   .then(() => console.log("Connexion à MongoDB réussie !"))
   .catch(() => console.log("Connexion à MongoDB échouée !"));
 
-//utilisation de la fonction .use pour fournir à l'application de quoi répondre au serveur.
-//le middleware express suivant prend toutes les requêtes qui ont comme content-type application/json...
-//...et met à disposition leur  body  directement sur l'objet req.
-app.use(express.json());
-
 //-----------------------------------------------------------------------------------------------
+
+//appel de la méthode express pour pouvoir créer une application express.
+const app = express();
+
+//installation d'helmet sur l'application.
+helmet({
+  crossOriginResourcePolicy: false,
+});
+
+//appel du plugin cors.
+app.use(cors());
+
 //middleware pour prévenir les erreurs de cors :
-//sysème de sécurité qui bloque par défaut les appels http entre des serveurs différents.
 //la fonction suivante permet aux port 3000 et 8080 de pouvoir communiquer grace aux headers...
 //...qui signalent au navigateur que dans le cas suivant il ne s'agit d'une pratique malveillante.
 app.use((req, res, next) => {
@@ -48,7 +60,11 @@ app.use((req, res, next) => {
   next();
 });
 
-//-----------------------------------------------------------------------------------------------
+//utilisation de la fonction .use pour fournir à l'application de quoi répondre au serveur.
+//le middleware express suivant prend toutes les requêtes qui ont comme content-type application/json...
+//...et met à disposition leur  body  directement sur l'objet req.
+app.use(express.json());
+
 //utilisation de la fonction .use pour que l'application gère les requêtes de fichiers.
 //express.static permet de gérer les dossiers statiques.
 //on utilise ensuite méthode path.join auquel on passe le nom du dossier (__dirname).

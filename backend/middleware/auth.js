@@ -1,5 +1,8 @@
 //import du package jsonwebtoken.
 const jwt = require("jsonwebtoken");
+//installation puis import du package dotenv afin de sécurisé la clé secrète jwb.
+//la clé secrète est stockée dans le fichier .env qui ne sera pas versionné sur git (voir fichier gitignore).
+require("dotenv").config();
 
 //-----------------------------------------------------------------------------------------------
 //export du middleware d'authentification.
@@ -10,7 +13,7 @@ module.exports = (req, res, next) => {
     //récupération du token qui est le second élément l'autorisation du header de la requête.
     const token = req.headers.authorization.split(" ")[1];
     //fonction .verify de jsonwebtoken pour décoder le token.
-    const decodedToken = jwt.verify(token, "RANDOM_TOKEN_SECRET");
+    const decodedToken = jwt.verify(token, process.env.SECRET_TOKEN);
     //on récupère un objet js dont on peut récupérer l'id de l'utilisateur.
     const userId = decodedToken.userId;
     //on rajoute l'id de l'utilsateur à l'objet requête.
